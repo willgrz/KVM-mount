@@ -1,0 +1,8 @@
+#KVM image mounter, supports KVM images themself and gziped installer images
+#Requires: loop kpartx gzip mount
+##Config:
+#Change path to ISO and IMG dir in mountkvm
+##Usage:
+#mountkvm <imagename>
+#mountkvm -u(nmount)
+#mountkvm -l(ist)

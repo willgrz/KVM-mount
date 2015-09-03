@@ -1,0 +1,138 @@
+#!/bin/bash
+isodir="/kvm/nfs/_iso"
+imgdir_local="/kvm/img"
+imgdir_remote="/kvm/nfs/"
+tmpdir="/tmp"
+mountpoint="/mnt"
+loop="loop0"
+
+
+if [ "$1" == "-h" ]; then
+        echo 'Usage:'
+	echo 'mountkvm <imagename>'
+	echo 'mountkvm -u(mount)'
+	echo 'mountkvm -l(ist)'
+        exit 0
+ fi
+
+#file
+dimg=$1
+
+#list function
+function list_templates {
+ipath=$1
+echo "Images available for mount in $ipath:"
+ls -1 $ipath | egrep '(.img|.gz)'
+}
+
+#mount function
+function mount_image {
+simg=$1
+	#check if mountpoint is not mounted
+	mount |grep $mountpoint >>/dev/null
+	if [ "$?" == "0" ]; then
+		echo "Error: something is mounted at $mountpoint, please run mountkvm -u first or manually unmount"
+		exit 1
+	fi
+	#check if loop device is in use
+	losetup -l |grep /dev/$loop >>/dev/null
+	if [ "$?" == "0" ]; then
+		echo "Error: $loop is in use, please run mountkvm -u first or manually remove it"
+		exit 1
+	fi
+	#if everything is ok check if image is gzip template
+	if [[ "$simg" == *".gz" ]]; then
+		#image is gzip, unpack it and schedule repack later
+		simg2=
+		rm -f /var/run/kvmmount_repack
+		echo 'gzrepack=1' >/var/run/kvmmount_repack
+		echo "gzorgname=$simg" >>/var/run/kvmmount_repack
+		echo "tmpfile=$tmpdir/$dimg.tmp" >>/var/run/kvmmount_repack
+		gunzip -dc $simg >$tmpdir/$dimg.tmp
+		simg="$tmpdir/$dimg.tmp"
+	fi
+	#now we have a raw img file - mount it on loop
+	losetup /dev/$loop $simg
+	#kpartx
+	kpartx -a /dev/$loop
+	#eh, OS is too fast for kpartx so we need a minor sleep here
+	sleep 2
+	#trial and error which partition is the right one, try 1
+	mount /dev/mapper/$loop\p1 $mountpoint >>/dev/null 
+	if [ "$?" == "32" ]; then
+	#was wrong, try 2
+		mount /dev/mapper/$loop\p2 $mountpoint >>/dev/null
+		if [ "$?" == "32" ]; then
+		#was wrong, try 3
+			mount /dev/mapper/$loop\p3 $mountpoint >>/dev/null
+			if [ "$?" == "32" ]; then
+			#was wrong, try 4
+				mount /dev/mapper/$loop\p4 $mountpoint >>/dev/null
+				if [ "$?" == "32" ]; then
+					#was wrong, last resort, try 5
+					mount /dev/mapper/$loop\p5 $mountpoint >>/dev/null
+					if [ "$?" == "32" ]; then
+						echo "Error: could not find mountable partition - exiting"
+						echo "Removing kpartx"
+						kpartx -d /dev/$loop
+						echo "Removing loop"
+						losetup -d /dev/$loop
+						exit 1
+					fi
+				fi
+			fi
+		fi
+	fi
+}
+
+if [ "$1" == "-l" ]; then
+	list_templates $isodir
+	echo -e '\n'
+	list_templates $imgdir_local
+	echo -e '\n'
+	list_templates $imgdir_remote
+	exit 0
+fi
+
+if [ "$1" == "-u" ]; then
+	mount | grep "$mountpoint" >>/dev/null
+	if [ "$?" == "1" ]; then
+		echo "Error: nothing mounted"
+		exit 0
+	fi
+	echo "Unmounting current mount"
+	umount -f $mountpoint
+	kpartx -d /dev/$loop
+	losetup -d /dev/$loop
+	echo "Unmount done - checking if re-gzip is required"
+       	#check if a gzip repack is scheduled
+	if [ -f /var/run/kvmmount_repack ]; then
+		echo "Gzip repack required - running now"
+		gzrepack=0
+		gzorgname=0
+		tmpfile=0
+	       	source /var/run/kvmmount_repack
+        	if [ "$gzrepack" == "1" ]; then
+	        	rm -f $gzorgname
+	    	        gzip -c $tmpfile >$gzorgname
+			echo "Repack done"
+			rm /var/run/kvmmount_repack
+			rm $tmpfile
+		fi
+	else
+		echo "No re-gzip required"
+	fi
+	exit 0
+fi
+
+#mount
+#check where file is and run mount subprocess
+if [ -f $isodir/$dimg ]; then
+	mount_image $isodir/$dimg
+elif [ -f $imgdir_local/$dimg ]; then
+	mount_image $imgdir_local/$dimg
+elif [ -f $imgdir_remote/$dimg ]; then
+	mount_image $imgdir_remote/$dimg
+else
+	echo "Error: Image file not found or wrong command - exiting"
+fi
