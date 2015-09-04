@@ -43,7 +43,6 @@ simg=$1
 	#if everything is ok check if image is gzip template
 	if [[ "$simg" == *".gz" ]]; then
 		#image is gzip, unpack it and schedule repack later
-		simg2=
 		rm -f /var/run/kvmmount_repack
 		echo 'gzrepack=1' >/var/run/kvmmount_repack
 		echo "gzorgname=$simg" >>/var/run/kvmmount_repack
