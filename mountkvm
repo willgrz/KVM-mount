@@ -3,8 +3,8 @@
 isodir="/kvm/nfs/_iso"
 imgdir_local="/kvm/img"
 imgdir_remote="/kvm/nfs/"
-tmpdir="/tmp"
-mountpoint="/mnt"
+tmpdir="$(mktemp -d)"
+mountpoint="$(mktemp -d)"
 loop="loop0"
 
 if [ "$1" == "-h" ]; then
@@ -132,3 +132,6 @@ elif [ -f "$imgdir_remote/$dimg" ]; then
 else
 	echo "Error: Image file not found or wrong command - exiting"
 fi
+
+# Cleaning up previously created temporary mountpoints and temp directories ...
+rmdir "$tmpdir" "$mountpoint"
