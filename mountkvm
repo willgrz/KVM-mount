@@ -53,8 +53,7 @@ function mount_image {
 	#now we have a raw img file - mount it on loop
 	losetup "/dev/$loop" "$simg"
 	#kpartx
-	kpartx -a "/dev/$loop"
-	partprope "/dev/$loop"
+	kpartx -sa "/dev/$loop"
 	#trial and error which partition is the right one, try 1
 	foundmount=0
 	for partition in "/dev/mapper/${loop}p"*; do
