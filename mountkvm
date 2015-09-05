@@ -5,7 +5,7 @@ imgdir_local="/kvm/img"
 imgdir_remote="/kvm/nfs/"
 tmpdir="$(mktemp -d)"
 mountpoint="$(mktemp -d)"
-loop="loop0"
+loop="loop$RANDOM"
 
 if [ "$1" == "-h" ]; then
 	echo 'Usage: mountkvm <imagename>'
@@ -30,12 +30,6 @@ function mount_image {
 	#check if mountpoint is not mounted
 	if mountpoint -q "$mountpoint"; then
 		echo "Error: something is mounted at $mountpoint, please run mountkvm -u first or manually unmount"
-		exit 1
-	fi
-	#check if loop device is in use
-	losetup -l |grep "/dev/$loop" >>/dev/null
-	if [ "$?" == "0" ]; then
-		echo "Error: $loop is in use, please run mountkvm -u first or manually remove it"
 		exit 1
 	fi
 	#if everything is ok check if image is gzip template
@@ -134,4 +128,4 @@ else
 fi
 
 # Cleaning up previously created temporary mountpoints and temp directories ...
-rmdir "$tmpdir" "$mountpoint"
+rmdir "$tmpdir" "$mountpoint" "/dev/$loop"
