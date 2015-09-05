@@ -28,8 +28,7 @@ function list_templates {
 function mount_image {
 	simg="$1"
 	#check if mountpoint is not mounted
-	mount |grep "$mountpoint" >>/dev/null
-	if [ "$?" == "0" ]; then
+	if mountpoint -q "$mountpoint"; then
 		echo "Error: something is mounted at $mountpoint, please run mountkvm -u first or manually unmount"
 		exit 1
 	fi
@@ -93,8 +92,7 @@ if [ "$1" == "-l" ]; then
 fi
 
 if [ "$1" == "-u" ]; then
-	mount | grep "$mountpoint" >>/dev/null
-	if [ "$?" == "1" ]; then
+	if ! mountpoint -q "$mountpoint"; then
 		echo "Error: nothing mounted"
 		exit 0
 	fi
