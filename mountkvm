@@ -61,9 +61,9 @@ function mount_image {
 
 if [ "$1" == "-l" ]; then
 	list_templates "$isodir"
-	echo -e '\n'
+	echo
 	list_templates "$imgdir_local"
-	echo -e '\n'
+	echo
 	list_templates "$imgdir_remote"
 	exit 0
 fi
