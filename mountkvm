@@ -24,6 +24,14 @@ function list_templates {
 	ls -1 "$ipath" | egrep '\.(img|gz)$'
 }
 
+function cleanup_and_exit {
+	umount -f "$mountpoint"
+	kpartx -d "/dev/$loop"
+	losetup -d "/dev/$loop"
+	rmdir -f "$tmpdir" "$mountpoint" "/dev/$loop"
+	exit "$1"
+}
+
 #mount function
 function mount_image {
 	simg="$1"
@@ -48,30 +56,13 @@ function mount_image {
 	kpartx -a "/dev/$loop"
 	partprope "/dev/$loop"
 	#trial and error which partition is the right one, try 1
-	mount /dev/mapper/$loop\p1 $mountpoint >>/dev/null 
-	if [ "$?" == "32" ]; then
-	#was wrong, try 2
-		mount /dev/mapper/$loop\p2 $mountpoint >>/dev/null
-		if [ "$?" == "32" ]; then
-		#was wrong, try 3
-			mount /dev/mapper/$loop\p3 $mountpoint >>/dev/null
-			if [ "$?" == "32" ]; then
-			#was wrong, try 4
-				mount /dev/mapper/$loop\p4 $mountpoint >>/dev/null
-				if [ "$?" == "32" ]; then
-					#was wrong, last resort, try 5
-					mount /dev/mapper/$loop\p5 $mountpoint >>/dev/null
-					if [ "$?" == "32" ]; then
-						echo "Error: could not find mountable partition - exiting"
-						echo "Removing kpartx"
-						kpartx -d "/dev/$loop"
-						echo "Removing loop"
-						losetup -d "/dev/$loop"
-						exit 1
-					fi
-				fi
-			fi
-		fi
+	foundmount=0
+	for partition in "/dev/mapper/${loop}p"*; do
+		mount "$partition" "$mountpoint" && foundmount=1 && break
+	done
+	if [ "x$foundmount" == "x0" ]; then
+		echo "Error: could not find mountable partition - exiting"
+		cleanup_and_exit 1
 	fi
 }
 
@@ -126,5 +117,4 @@ else
 	echo "Error: Image file not found or wrong command - exiting"
 fi
 
-# Cleaning up previously created temporary mountpoints and temp directories ...
-rmdir "$tmpdir" "$mountpoint" "/dev/$loop"
+cleanup_and_exit 0
