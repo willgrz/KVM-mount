@@ -8,12 +8,12 @@ loop="loop0"
 
 
 if [ "$1" == "-h" ]; then
-        echo 'Usage:'
+	echo 'Usage:'
 	echo 'mountkvm <imagename>'
 	echo 'mountkvm -u(mount)'
 	echo 'mountkvm -l(ist)'
-        exit 0
- fi
+	exit 0
+fi
 
 #file
 dimg=$1
