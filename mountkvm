@@ -5,7 +5,7 @@ imgdir_local="/kvm/img"
 imgdir_remote="/kvm/nfs/"
 tmpdir="$(mktemp -d)"
 mountpoint="$(mktemp -d)"
-loop="loop$RANDOM"
+loopdev="/dev/loop$RANDOM"
 
 if [ "$1" == "-h" ]; then
 	echo 'Usage: mountkvm <imagename>'
@@ -26,9 +26,9 @@ function list_templates {
 
 function cleanup_and_exit {
 	umount -f "$mountpoint"
-	kpartx -d "/dev/$loop"
-	losetup -d "/dev/$loop"
-	rmdir -f "$tmpdir" "$mountpoint" "/dev/$loop"
+	kpartx -d "$loopdev"
+	losetup -d "$loopdev"
+	rmdir -f "$tmpdir" "$mountpoint" "$loopdev"
 	exit "$1"
 }
 
@@ -36,7 +36,7 @@ function cleanup_and_exit {
 function mount_image {
 	simg="$1"
 	#if everything is ok check if image is gzip template
-	if [[ "$simg" == *".gz" ]]; then
+	if echo "$simg" | egrep '\.gz$'; then
 		#image is gzip, unpack it and schedule repack later
 		rm -f /var/run/kvmmount_repack
 		echo 'gzrepack=1' >/var/run/kvmmount_repack
@@ -46,9 +46,9 @@ function mount_image {
 		simg="$tmpdir/$dimg.tmp"
 	fi
 	#now we have a raw img file - mount it on loop
-	losetup "/dev/$loop" "$simg"
+	losetup "$loopdev" "$simg"
 	#kpartx
-	kpartx -sa "/dev/$loop"
+	kpartx -sa "$loopdev"
 	#trial and error which partition is the right one, try 1
 	for partition in "/dev/mapper/${loop}p"*; do
 		mount "$partition" "$mountpoint" && break
@@ -75,8 +75,8 @@ if [ "$1" == "-u" ]; then
 	fi
 	echo "Unmounting current mount"
 	umount -f "$mountpoint"
-	kpartx -d "/dev/$loop"
-	losetup -d "/dev/$loop"
+	kpartx -d "$loopdev"
+	losetup -d "$loopdev"
 	echo "Unmount done - checking if re-gzip is required"
 	#check if a gzip repack is scheduled
 	if [ -f /var/run/kvmmount_repack ]; then
