@@ -46,8 +46,7 @@ function mount_image {
 	losetup "/dev/$loop" "$simg"
 	#kpartx
 	kpartx -a "/dev/$loop"
-	#eh, OS is too fast for kpartx so we need a minor sleep here
-	sleep 2
+	partprope "/dev/$loop"
 	#trial and error which partition is the right one, try 1
 	mount /dev/mapper/$loop\p1 $mountpoint >>/dev/null 
 	if [ "$?" == "32" ]; then
