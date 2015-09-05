@@ -35,11 +35,6 @@ function cleanup_and_exit {
 #mount function
 function mount_image {
 	simg="$1"
-	#check if mountpoint is not mounted
-	if mountpoint -q "$mountpoint"; then
-		echo "Error: something is mounted at $mountpoint, please run mountkvm -u first or manually unmount"
-		exit 1
-	fi
 	#if everything is ok check if image is gzip template
 	if [[ "$simg" == *".gz" ]]; then
 		#image is gzip, unpack it and schedule repack later
@@ -55,11 +50,10 @@ function mount_image {
 	#kpartx
 	kpartx -sa "/dev/$loop"
 	#trial and error which partition is the right one, try 1
-	foundmount=0
 	for partition in "/dev/mapper/${loop}p"*; do
-		mount "$partition" "$mountpoint" && foundmount=1 && break
+		mount "$partition" "$mountpoint" && break
 	done
-	if [ "x$foundmount" == "x0" ]; then
+	if ! mountpoint "$mountpoint"; then
 		echo "Error: could not find mountable partition - exiting"
 		cleanup_and_exit 1
 	fi
