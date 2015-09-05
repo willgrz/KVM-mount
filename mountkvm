@@ -1,11 +1,11 @@
 #!/bin/bash
+
 isodir="/kvm/nfs/_iso"
 imgdir_local="/kvm/img"
 imgdir_remote="/kvm/nfs/"
 tmpdir="/tmp"
 mountpoint="/mnt"
 loop="loop0"
-
 
 if [ "$1" == "-h" ]; then
 	echo 'Usage:'
