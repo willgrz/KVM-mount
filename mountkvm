@@ -27,7 +27,7 @@ ls -1 "$ipath" | egrep '(.img|.gz)'
 
 #mount function
 function mount_image {
-simg="$1"
+	simg="$1"
 	#check if mountpoint is not mounted
 	mount |grep $mountpoint >>/dev/null
 	if [ "$?" == "0" ]; then
@@ -104,16 +104,16 @@ if [ "$1" == "-u" ]; then
 	kpartx -d /dev/$loop
 	losetup -d /dev/$loop
 	echo "Unmount done - checking if re-gzip is required"
-       	#check if a gzip repack is scheduled
+	#check if a gzip repack is scheduled
 	if [ -f /var/run/kvmmount_repack ]; then
 		echo "Gzip repack required - running now"
 		gzrepack=0
 		gzorgname=0
 		tmpfile=0
-	       	source /var/run/kvmmount_repack
-        	if [ "$gzrepack" == "1" ]; then
-	        	rm -f $gzorgname
-	    	        gzip -c $tmpfile >$gzorgname
+		source /var/run/kvmmount_repack
+		if [ "$gzrepack" == "1" ]; then
+			rm -f $gzorgname
+			gzip -c $tmpfile >$gzorgname
 			echo "Repack done"
 			rm /var/run/kvmmount_repack
 			rm $tmpfile
