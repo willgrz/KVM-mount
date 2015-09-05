@@ -21,7 +21,7 @@ dimg="$1"
 function list_templates {
 	ipath="$1"
 	echo "Images available for mount in $ipath:"
-	ls -1 "$ipath" | egrep '(.img|.gz)'
+	ls -1 "$ipath" | egrep '\.(img|gz)$'
 }
 
 #mount function
