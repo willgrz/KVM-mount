@@ -16,18 +16,18 @@ if [ "$1" == "-h" ]; then
 fi
 
 #file
-dimg=$1
+dimg="$1"
 
 #list function
 function list_templates {
-ipath=$1
+ipath="$1"
 echo "Images available for mount in $ipath:"
-ls -1 $ipath | egrep '(.img|.gz)'
+ls -1 "$ipath" | egrep '(.img|.gz)'
 }
 
 #mount function
 function mount_image {
-simg=$1
+simg="$1"
 	#check if mountpoint is not mounted
 	mount |grep $mountpoint >>/dev/null
 	if [ "$?" == "0" ]; then
@@ -35,7 +35,7 @@ simg=$1
 		exit 1
 	fi
 	#check if loop device is in use
-	losetup -l |grep /dev/$loop >>/dev/null
+	losetup -l |grep "/dev/$loop" >>/dev/null
 	if [ "$?" == "0" ]; then
 		echo "Error: $loop is in use, please run mountkvm -u first or manually remove it"
 		exit 1
@@ -47,7 +47,7 @@ simg=$1
 		echo 'gzrepack=1' >/var/run/kvmmount_repack
 		echo "gzorgname=$simg" >>/var/run/kvmmount_repack
 		echo "tmpfile=$tmpdir/$dimg.tmp" >>/var/run/kvmmount_repack
-		gunzip -dc $simg >$tmpdir/$dimg.tmp
+		gunzip -dc "$simg" > "$tmpdir/$dimg.tmp"
 		simg="$tmpdir/$dimg.tmp"
 	fi
 	#now we have a raw img file - mount it on loop
